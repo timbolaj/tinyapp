@@ -39,9 +39,17 @@ app.get("/urls/:shortURL", (req, res) => {
 }); 
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  const shortURL = generateShortURL();
+  const newURL = req.body.longURL;
+  urlDatabase[shortURL] = newURL;
+  res.redirect(`/urls/${shortURL}`);
 });
+
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -70,4 +78,5 @@ const generateShortURL = () => {
     randomString += randomAlphanumIndex();
   }
   return randomString;
-}
+};
+
