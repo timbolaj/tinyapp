@@ -20,6 +20,18 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 }); 
 
+app.get("/urls", (req, res) => {
+  let templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
+app.get("/urls/:shortURL", (req, res) => {
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[req.params.shortURL];
+  let templateVars = { shortURL: shortURL, longURL: longURL};
+  res.render("urls_show", templateVars);
+}); 
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
