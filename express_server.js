@@ -20,24 +20,32 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
-}); 
+});
 
+//Displays main page with all urls
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
+//Creates new url key
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+//Shows webpage for the newly added website
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
-  let longURL = urlDatabase[req.params.shortURL];
-  let templateVars = { shortURL: shortURL, longURL: longURL};
-  res.render("urls_show", templateVars);
-}); 
+  if (verifyShortUrl(shortURL)) {
+    let longURL = urlDatabase[req.params.shortURL];
+    let templateVars = { shortURL: shortURL, longURL: longURL};
+    res.render("urls_show", templateVars);
+  } else {
+    res.send('does not exist');
+  }
+});
 
+//Adds new url to page with all urls
 app.post("/urls", (req, res) => {
   const shortURL = generateShortURL();
   const newURL = req.body.longURL;
@@ -45,17 +53,23 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+//Redirect user to longURL
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
-})
+  if (verifyShortUrl(shortURL)) {
+    const longURL = urlDatabase[shortURL];
+    res.redirect(longURL);
+  } else {
+    res.status(404);
+    res.send('Does not exist');
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-const randomAlphanumIndex = () => {  
+const randomAlphanumIndex = () => {
   const alphaLowerCase = 'abcdefghijklmnopqrstuvwxyz';
   const upperCase = alphaLowerCase.toUpperCase();
   const numeric = '1234567890';
@@ -78,5 +92,10 @@ const generateShortURL = () => {
     randomString += randomAlphanumIndex();
   }
   return randomString;
+};
+
+//helper function, check if short url exists
+const verifyShortUrl = URL => {
+  return urlDatabase[URL];
 };
 
