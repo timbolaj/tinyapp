@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/timbolaj/tinyapp/issues"
   },
-  "homepage": "https://github.com/timbolaj/tinyapp#readme"
+  "homepage": "https://github.com/timbolaj/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
