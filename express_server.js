@@ -1,4 +1,5 @@
 const express = require("express");
+const cookie = require('cookie-parser')
 const app = express();
 const PORT = 8080;
 const morgan = require('morgan');
@@ -6,6 +7,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 app.set("view engine", "ejs");
+app.use(cookie());
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -26,13 +28,14 @@ app.get("/hello", (req, res) => {
 
 //Displays main page with all urls
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase, username: req.cookies['username'] };
   res.render("urls_index", templateVars);
 });
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = { username: req.cookies['username']}
+  res.render("urls_new", templateVars);
 });
 
 //Shows webpage for the newly added website
@@ -40,7 +43,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (verifyShortUrl(shortURL)) {
     let longURL = urlDatabase[req.params.shortURL];
-    let templateVars = { shortURL: shortURL, longURL: longURL};
+    let templateVars = { shortURL: shortURL, longURL: longURL, username: req.cookies['username']};
     res.render("urls_show", templateVars);
   } else {
     res.send('does not exist');
@@ -95,6 +98,23 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   urlDatabase[key] = req.body.longURL
   res.redirect('/urls')
 }) 
+
+//Working on cookies here
+//Give endpoint to hanlde a post to /login
+app.post("/login", (req, res) => {
+  //address edge cases, make sure there's a string
+  if (req.body.username) {
+    const username = req.body.username;
+    res.cookie('username', username);
+  }
+  res.redirect('/urls');
+});
+
+//Give endpoint to handle a post to /logout
+app.post("/logout", (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
