@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
+const morgan = require('morgan');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(morgan('dev'));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -64,6 +66,13 @@ app.get("/u/:shortURL", (req, res) => {
     res.send('Does not exist');
   }
 });
+
+//Delete url:
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const urlToDelete = req.params.shortURL;
+  delete urlDatabase[urlToDelete];
+  res.redirect('/urls');
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
