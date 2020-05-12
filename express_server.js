@@ -67,6 +67,13 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
+/*Recap
+The action attribute urls_index sends the post request to
+/delete, a page which we cannot get, but exists in the backend
+In the function, we delete the item from the database and redirect the user 
+to the page with all the urls
+*/
+
 //Delete url:
 app.post("/urls/:shortURL/delete", (req, res) => {
   const urlToDelete = req.params.shortURL;
@@ -74,10 +81,26 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect('/urls');
 })
 
+/* Recap
+In urls_index, we actually want to redirect the user to page
+styled by urls_show.ejs and so we used an a tag
+From there, like in post, we send the post request to /edit, a page
+which the user cannot get but exists in the back end
+In the function, we reassign the value
+*/
+
+//Edit url in database:
+app.post("/urls/:shortURL/edit", (req, res) => {
+  const key = req.params.shortURL;
+  urlDatabase[key] = req.body.longURL
+  res.redirect('/urls')
+}) 
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+/////Helper functions
 const randomAlphanumIndex = () => {
   const alphaLowerCase = 'abcdefghijklmnopqrstuvwxyz';
   const upperCase = alphaLowerCase.toUpperCase();
