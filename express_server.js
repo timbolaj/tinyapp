@@ -115,10 +115,12 @@ app.post("/logout", (req, res) => {
   res.clearCookie('username');
   res.redirect('/urls');
 });
+//------------------------------------------------------------------------------ May 13
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  
+  templateVars = { username:req.cookies['username'] }
+  res.render("urls_register", templateVars)
 })
 
 app.listen(PORT, () => {
