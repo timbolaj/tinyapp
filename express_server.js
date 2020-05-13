@@ -14,6 +14,10 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const userDatabase = {
+  //Want to store user as key then object
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -121,6 +125,32 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => {
   templateVars = { username:req.cookies['username'] }
   res.render("urls_register", templateVars)
+})
+
+//helper function, adds user if it is not already taken
+const addUser = newUser => {
+  const newUserId = generateShortURL();
+  const {email, password} = newUser;
+  //need to make sure email is valid and not in the database already
+  for (user in userDatabase) {
+    if (!user[email]) {
+      return null;
+    }
+    if (!password) {
+      return null;
+    }
+  }
+  newUser.id = newUserId
+  userDatabase[newUserId] = newUser;
+  return newUser
+}
+
+app.post("/register", (req, res) => {
+  const newUser = addUser(req.body);
+  //set user_id cookie with the new id
+  res.cookie('new_user', newUser.id)
+  console.log(newUser.id)
+  res.redirect('/urls');
 })
 
 app.listen(PORT, () => {
