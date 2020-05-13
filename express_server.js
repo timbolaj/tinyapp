@@ -111,8 +111,7 @@ app.post("/login", (req, res) => {
     const user_id = req.body.user_id;
     res.cookie('user_id', user_id);
   }
-  res.send("NO")
-  res.redirect('/urls');
+  res.status(400).send('Either your user id or password was incorrect: please try again');
 });
 
 //Give endpoint to handle a post to /logout
@@ -131,24 +130,32 @@ app.get("/register", (req, res) => {
 //helper function, adds user if it is not already taken
 const addUser = newUser => {
   const newUserId = generateShortURL();
-  const {email, password} = newUser;
-  //need to make sure email is valid and not in the database already
-  for (user in userDatabase) {
-    if (!user[email]) {
-      return null;
-    }
-    if (!password) {
-      return null;
-    }
-  }
   newUser.id = newUserId
   userDatabase[newUserId] = newUser;
   return newUser
 }
 
+//helper function to see if emails are already taken
+const checkIfAvail = (newVal, database) => {
+  for (user in database) {
+    if (!user[newVal]) {
+      return null;
+    }
+  }
+  return true;
+}
+
 app.post("/register", (req, res) => {
-  const newUser = addUser(req.body);
-  //set user_id cookie with the new id
+  const {email, password} = req.body;
+  if (email === '') {
+    res.status(400).send('Error: Please enter in an email');
+  } else if (password === '') {
+    res.status(400).send('Error: Please enter a password');
+  } else if (!checkIfAvail(email, userDatabase)) {
+    res.status(400).send('Error: Please be original, email already taken');
+  }
+
+  newUser = addUser(req.body)
   res.cookie('user_id', newUser.id)
   res.redirect('/urls');
 })
