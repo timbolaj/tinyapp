@@ -17,10 +17,8 @@
           <button type="submit" class="btn btn-outline-dark">Logout</button>
         </form>
       <% } else { %>
-        <form method="POST" action="/login">
-          <input type="text" name="user_id" placeholder="User Id" required>
-          <button type="submit" class="btn btn-outline-dark">Login</button>
-        </form>
+        <input type="button" onclick="location.href='/register';" value="Register">
+        <input type="button" onclick="location.href='/login';" value="Login">
       <% } %>
     </div>
   </nav>
