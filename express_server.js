@@ -116,11 +116,23 @@ app.post("/logout", (req, res) => {
   res.redirect('/urls');
 });
 
+//Creates new page: registration
+app.get("/register", (req, res) => {
+  
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-/////Helper functions
+
+
+
+
+
+
+
+/////Helper functions////////////////
 const randomAlphanumIndex = () => {
   const alphaLowerCase = 'abcdefghijklmnopqrstuvwxyz';
   const upperCase = alphaLowerCase.toUpperCase();
