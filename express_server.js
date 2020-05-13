@@ -32,13 +32,13 @@ app.get("/hello", (req, res) => {
 
 //Displays main page with all urls
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies['username'] };
+  let templateVars = { urls: urlDatabase, user_id: req.cookies['user_id'] };
   res.render("urls_index", templateVars);
 });
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies['username']}
+  let templateVars = { user_id: req.cookies['user_id']}
   res.render("urls_new", templateVars);
 });
 
@@ -47,7 +47,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (verifyShortUrl(shortURL)) {
     let longURL = urlDatabase[req.params.shortURL];
-    let templateVars = { shortURL: shortURL, longURL: longURL, username: req.cookies['username']};
+    let templateVars = { shortURL: shortURL, longURL: longURL, user_id: req.cookies['user_id']};
     res.render("urls_show", templateVars);
   } else {
     res.send('does not exist');
@@ -107,23 +107,24 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 //Give endpoint to hanlde a post to /login
 app.post("/login", (req, res) => {
   //address edge cases, make sure there's a string
-  if (req.body.username) {
-    const username = req.body.username;
-    res.cookie('username', username);
+  if (userDatabase[req.body.user_id]) {
+    const user_id = req.body.user_id;
+    res.cookie('user_id', user_id);
   }
+  res.send("NO")
   res.redirect('/urls');
 });
 
 //Give endpoint to handle a post to /logout
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 //------------------------------------------------------------------------------ May 13
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  templateVars = { username:req.cookies['username'] }
+  templateVars = { user_id :req.cookies['user_id'] }
   res.render("urls_register", templateVars)
 })
 
@@ -148,8 +149,7 @@ const addUser = newUser => {
 app.post("/register", (req, res) => {
   const newUser = addUser(req.body);
   //set user_id cookie with the new id
-  res.cookie('new_user', newUser.id)
-  console.log(newUser.id)
+  res.cookie('user_id', newUser.id)
   res.redirect('/urls');
 })
 
