@@ -105,7 +105,6 @@ app.get("/urls", (req, res) => {
   const current_user = currentUser(req.session.user_id, userDatabase);
   if (!current_user) {
     res.render("urls_errors"); 
-    //port to a view template
   }
   //use helper function to find the links that belong to the user
   const usersLinks = urlsForUser(current_user, urlDatabase);
