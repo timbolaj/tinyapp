@@ -9,9 +9,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 app.set("view engine", "ejs");
 app.use(cookieSession({
-  name: 'session', 
-  keys: ['user_id']
-}))
+  name: 'session',
+  keys: ['userId']
+}));
 
 const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser, checkOwner} = require('./helperFunctions');
 
@@ -25,11 +25,12 @@ const userDatabase = {
 };
 
 app.get("/", (req, res) => {
-  const current_user = currentUser(req.session.user_id, userDatabase);
-  if (!current_user) {
+  const user = currentUser(req.session.userId, userDatabase);
+  if (!user) {
     res.redirect("/login");
+  } else {
+    res.redirect("/urls");
   }
-  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -42,13 +43,13 @@ app.get("/hello", (req, res) => {
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  const user = currentUser(req.session.user_id, userDatabase)
+  const user = currentUser(req.session.userId, userDatabase);
   if (user) {
     res.redirect('/urls');
+  } else {
+    let templateVars = { currentUser: user };
+    res.render("urls_register", templateVars);
   }
-
-  let templateVars = { current_user: user };
-  res.render("urls_register", templateVars);
 });
 
 app.post("/register", (req, res) => {
@@ -62,19 +63,19 @@ app.post("/register", (req, res) => {
     res.status(400).send('Error: Please be original, email already taken');
   } else {
     const newUser = addUser(req.body, userDatabase);
-    req.session.user_id = newUser.id;
+    req.session.userId = newUser.id;
     res.redirect('/urls');
   }
 });
 
 app.get("/login", (req, res) => {
-  const user = currentUser(req.session.user_id, userDatabase);
+  const user = currentUser(req.session.userId, userDatabase);
   if (user) {
     res.redirect("/urls");
+  } else {
+    let templateVars = { currentUser: user };
+    res.render("login", templateVars);
   }
-
-  let templateVars = { current_user: user };
-  res.render("login", templateVars);
 });
 
 //Working on cookies here
@@ -86,11 +87,11 @@ app.post("/login", (req, res) => {
   const pwdUsed = req.body['password'];
 
   if (fetchUserInfo(emailUsed, userDatabase)) { //user email matches
-    const { password, id } = fetchUserInfo(emailUsed, userDatabase); 
+    const { password, id } = fetchUserInfo(emailUsed, userDatabase);
     if (!bcrypt.compareSync(pwdUsed, password)) {
       res.status(403).send('Error 403: Please retype password');
     } else {
-      req.session.user_id = id;
+      req.session.userId = id;
       res.redirect('/urls');
     }
   } else {
@@ -102,21 +103,20 @@ app.post("/login", (req, res) => {
 //First thing, ensure that those who aren't signed in can't see this and prompted to sign in or register first - done
 //page needs to also filter out the pages not associated with those of the current user - done
 app.get("/urls", (req, res) => {
-  const current_user = currentUser(req.session.user_id, userDatabase);
-  if (!current_user) {
-    res.render("urls_errors"); 
+  const user = currentUser(req.session.userId, userDatabase);
+  if (!user) {
+    res.render("urls_errors");
+  } else {
+    const usersLinks = urlsForUser(user, urlDatabase);
+    let templateVars = { urls: usersLinks, currentUser: currentUser(req.session.userId, userDatabase) };
+    res.render("urls_index", templateVars);
   }
-  //use helper function to find the links that belong to the user
-  const usersLinks = urlsForUser(current_user, urlDatabase);
-
-  let templateVars = { urls: usersLinks, current_user: currentUser(req.session.user_id, userDatabase) };
-  res.render("urls_index", templateVars);
 });
 
 
 //Adds new url to page with all urls
 app.post("/urls", (req, res) => {
-  const user = currentUser(req.session.user_id, userDatabase);
+  const user = currentUser(req.session.userId, userDatabase);
   if (!user) {
     res.redirect("/login");
   } else {
@@ -129,26 +129,26 @@ app.post("/urls", (req, res) => {
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  const current_user = currentUser(req.session.user_id, userDatabase);
-  if (!current_user) {
+  const user = currentUser(req.session.userId, userDatabase);
+  if (!user) {
     res.redirect('/login');
+  } else {
+    let templateVars = { currentUser: user };
+    res.render("urls_new", templateVars);
   }
-
-  let templateVars = { current_user: current_user };
-  res.render("urls_new", templateVars);
 });
 
 //Shows webpage for the newly added website
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const current_user = currentUser(req.session.user_id, userDatabase);
+  const user = currentUser(req.session.userId, userDatabase);
 
   if (verifyShortUrl(shortURL, urlDatabase)) {
-    if (current_user !== urlDatabase[shortURL].userID) {
+    if (user !== urlDatabase[shortURL].userID) {
       res.send('This id does not belong to you');
     } else {
       const longURL = urlDatabase[shortURL].longURL;
-      let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.session.user_id, userDatabase)};
+      let templateVars = { shortURL: shortURL, longURL: longURL, currentUser: user};
       res.render("urls_show", templateVars);
     }
   } else {
@@ -169,8 +169,8 @@ app.get("/u/:shortURL", (req, res) => {
 
 //Delete url:
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!checkOwner(currentUser(req.session.user_id, userDatabase), req.params.shortURL, urlDatabase)) {
-    res.send('This id does not belong to you')
+  if (!checkOwner(currentUser(req.session.userId, userDatabase), req.params.shortURL, urlDatabase)) {
+    res.send('This id does not belong to you');
   } else {
     delete urlDatabase[req.params.shortURL];
     res.redirect('/urls');
@@ -179,8 +179,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Edit url in database:
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (!checkOwner(currentUser(req.session.user_id, userDatabase), req.params.shortURL, urlDatabase)) {
-    res.send('This id does not belong to you')
+  if (!checkOwner(currentUser(req.session.userId, userDatabase), req.params.shortURL, urlDatabase)) {
+    res.send('This id does not belong to you');
   } else {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect('/urls');

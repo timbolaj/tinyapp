@@ -32,7 +32,7 @@ const randomString = () => {
 
 const checkIfAvail = (newVal, database) => {
   for (let user in database) {
-    if (database[user].email === newVal) { 
+    if (database[user].email === newVal) {
       return false;
     }
   }
@@ -42,8 +42,8 @@ const checkIfAvail = (newVal, database) => {
 const addUser = (newUser, database) => {
   const newUserId = randomString();
   newUser.id = newUserId;
-  newUser.password = bcrypt.hashSync(newUser.password, 10)
-  database[newUserId] = newUser; 
+  newUser.password = bcrypt.hashSync(newUser.password, 10);
+  database[newUserId] = newUser;
   return newUser;
 };
 
@@ -78,7 +78,7 @@ const urlsForUser = (id, database) => {
 
 //helper function to determine if id of user matches that of the link
 const checkOwner = (userId, urlID, database) => {
-  return userId === database[urlID].userID
-}
+  return userId === database[urlID].userID;
+};
 
 module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser, checkOwner};
