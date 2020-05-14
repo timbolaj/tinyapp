@@ -12,12 +12,12 @@ app.use(cookie());
 const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo} = require('./helperFunctions');
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "bob123"},
+  "9sm5xK": {longURL: "http://www.google.com", userID: "bob123"},
 };
 
 const userDatabase = {
-
+  "bob123": {id: "bob123", "email-address": "bob123", password: "bob123"},
 }
 
 const currentUser = cookie => {
@@ -42,6 +42,7 @@ app.get("/hello", (req, res) => {
 
 //Displays main page with all urls
 app.get("/urls", (req, res) => {
+  console.log(urlDatabase);
   let templateVars = { urls: urlDatabase, current_user: currentUser(req.cookies['user_id']) };
   res.render("urls_index", templateVars);
 });
@@ -61,7 +62,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (verifyShortUrl(shortURL, urlDatabase)) {
-    let longURL = urlDatabase[req.params.shortURL];
+    let longURL = urlDatabase[req.params.shortURL].longURL;
     let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.cookies['user_id'])};
     res.render("urls_show", templateVars);
   } else {
@@ -73,7 +74,9 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = randomString();
   const newURL = req.body.longURL;
-  urlDatabase[shortURL] = newURL;
+  const user = currentUser(req.cookies['user_id']);
+  urlDatabase[shortURL] = { longURL: newURL, userID: user };
+  console.log(urlDatabase)
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -81,7 +84,7 @@ app.post("/urls", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   if (verifyShortUrl(shortURL, urlDatabase)) {
-    const longURL = urlDatabase[shortURL];
+    const longURL = urlDatabase[shortURL].longURL;
     res.redirect(longURL);
   } else {
     res.status(404);
