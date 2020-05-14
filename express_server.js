@@ -117,9 +117,13 @@ app.get("/urls", (req, res) => {
 
 //Adds new url to page with all urls
 app.post("/urls", (req, res) => {
+  const user = currentUser(req.session.user_id, userDatabase);
+  if (!user) {
+    res.redirect("/login");
+  }
+
   const shortURL = randomString();
   const newURL = req.body.longURL;
-  const user = currentUser(req.session.user_id, userDatabase);
   urlDatabase[shortURL] = { longURL: newURL, userID: user };
   res.redirect(`/urls/${shortURL}`);
 });
@@ -140,16 +144,16 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const current_user = currentUser(req.session.user_id, userDatabase);
 
-  if (current_user !== urlDatabase[shortURL].userID) {
-    res.send('This id does not belong to you');
-  }
-
   if (verifyShortUrl(shortURL, urlDatabase)) {
-    const longURL = urlDatabase[shortURL].longURL;
-    let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.session.user_id, userDatabase)};
-    res.render("urls_show", templateVars);
+    if (current_user !== urlDatabase[shortURL].userID) {
+      res.send('This id does not belong to you');
+    } else {
+      const longURL = urlDatabase[shortURL].longURL;
+      let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.session.user_id, userDatabase)};
+      res.render("urls_show", templateVars);
+    }
   } else {
-    res.send('does not exist');
+    res.send('This url does not exist');
   }
 });
 
