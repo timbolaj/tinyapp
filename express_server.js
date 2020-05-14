@@ -104,7 +104,7 @@ app.post("/login", (req, res) => {
 app.get("/urls", (req, res) => {
   const current_user = currentUser(req.session.user_id, userDatabase);
   if (!current_user) {
-    res.send("Please sign in or register"); 
+    res.render("urls_errors"); 
     //port to a view template
   }
   //use helper function to find the links that belong to the user
@@ -113,6 +113,7 @@ app.get("/urls", (req, res) => {
   let templateVars = { urls: usersLinks, current_user: currentUser(req.session.user_id, userDatabase) };
   res.render("urls_index", templateVars);
 });
+
 
 //Adds new url to page with all urls
 app.post("/urls", (req, res) => {
