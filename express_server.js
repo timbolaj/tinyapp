@@ -1,5 +1,5 @@
 const express = require("express");
-const cookie = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080;
 const morgan = require('morgan');
@@ -8,7 +8,10 @@ const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 app.set("view engine", "ejs");
-app.use(cookie());
+app.use(cookieSession({
+  name: 'session', //it will be req.session.user_id
+  keys: ['user_id']
+}))
 
 const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser, checkOwner} = require('./helperFunctions');
 
@@ -22,7 +25,7 @@ const userDatabase = {
 };
 
 app.get("/", (req, res) => {
-  const current_user = currentUser(req.cookies['user_id'], userDatabase);
+  const current_user = currentUser(req.session.user_id, userDatabase);
   if (!current_user) {
     res.redirect("/login");
   }
@@ -39,7 +42,7 @@ app.get("/hello", (req, res) => {
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  let templateVars = { current_user: currentUser(req.cookies['user_id'], userDatabase)};
+  let templateVars = { current_user: currentUser(req.session.user_id, userDatabase)};
   res.render("urls_register", templateVars);
 });
 
@@ -57,13 +60,13 @@ app.post("/register", (req, res) => {
   } else {
     req.body['password'] = hashedPwd;
     const newUser = addUser(req.body, userDatabase);
-    res.cookie('user_id', newUser.id);
+    req.session.user_id = newUser.id;
     res.redirect('/urls');
   }
 });
 
 app.get("/login", (req, res) => {
-  let templateVars = { current_user: currentUser(req.cookies['user_id'], userDatabase)};
+  let templateVars = { current_user: currentUser(req.session.user_id, userDatabase)};
   res.render("login", templateVars);
 });
 
@@ -81,7 +84,7 @@ app.post("/login", (req, res) => {
     if (!bcrypt.compareSync(pwdUsed, password)) {
       res.status(403).send('Error 403: Please retype password');
     } else {
-      res.cookie('user_id', id);
+      req.session.user_id = id;
       res.redirect('/urls');
     }
   } else {
@@ -93,14 +96,14 @@ app.post("/login", (req, res) => {
 //First thing, ensure that those who aren't signed in can't see this and prompted to sign in or register first - done
 //page needs to also filter out the pages not associated with those of the current user - done
 app.get("/urls", (req, res) => {
-  const current_user = currentUser(req.cookies['user_id'], userDatabase);
+  const current_user = currentUser(req.session.user_id, userDatabase);
   if (!current_user) {
     res.send("<html><body>Please sign in or register</body></html");
   }
   //use helper function to find the links that belong to the user
   const usersLinks = urlsForUser(current_user, urlDatabase);
 
-  let templateVars = { urls: usersLinks, current_user: currentUser(req.cookies['user_id'], userDatabase) };
+  let templateVars = { urls: usersLinks, current_user: currentUser(req.session.user_id, userDatabase) };
   res.render("urls_index", templateVars);
 });
 
@@ -108,14 +111,14 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = randomString();
   const newURL = req.body.longURL;
-  const user = currentUser(req.cookies['user_id'], userDatabase);
+  const user = currentUser(req.session.user_id, userDatabase);
   urlDatabase[shortURL] = { longURL: newURL, userID: user };
   res.redirect(`/urls/${shortURL}`);
 });
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  const current_user = currentUser(req.cookies['user_id'], userDatabase);
+  const current_user = currentUser(req.session.user_id, userDatabase);
   if (!current_user) {
     res.redirect('/login');
   }
@@ -128,7 +131,7 @@ app.get("/urls/new", (req, res) => {
 //Dont want different users to see this
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const current_user = currentUser(req.cookies['user_id'], userDatabase);
+  const current_user = currentUser(req.session.user_id, userDatabase);
   if (!urlDatabase[shortURL]) {
     res.send("The link does not exist");
   } else if (current_user !== urlDatabase[shortURL].userID) {
@@ -137,7 +140,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
   if (verifyShortUrl(shortURL, urlDatabase)) {
     const longURL = urlDatabase[req.params.shortURL].longURL;
-    let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.cookies['user_id'], userDatabase)};
+    let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.session.user_id, userDatabase)};
     res.render("urls_show", templateVars);
   } else {
     res.send('does not exist');
@@ -158,7 +161,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 //Delete url:
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!checkOwner(currentUser(req.cookies['user_id'], userDatabase), req.params.shortURL, urlDatabase)) {
+  if (!checkOwner(currentUser(req.session.user_id, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you')
   }
 
@@ -168,7 +171,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Edit url in database:
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (!checkOwner(currentUser(req.cookies['user_id'], userDatabase), req.params.shortURL, urlDatabase)) {
+  if (!checkOwner(currentUser(req.session.user_id, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you')
   }
 
@@ -178,7 +181,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //Give endpoint to handle a post to /logout
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/urls');
 });
 
