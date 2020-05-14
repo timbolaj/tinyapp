@@ -3,16 +3,6 @@ const verifyShortUrl = (URL, database) => {
   return database[URL];
 };
 
-const randomString = () => {
-  //Generate a unique shortURL - returns string of 6 random alphanum char
-  let randomString = '';
-  //length of alphanum is 62, therefore, number for index must be between 0 and 61
-  while (randomString.length < 6) {
-    randomString += randomAlphanumIndex();
-  }
-  return randomString;
-};
-
 const randomAlphanumIndex = () => {
   const alphaLowerCase = 'abcdefghijklmnopqrstuvwxyz';
   const upperCase = alphaLowerCase.toUpperCase();
@@ -26,6 +16,16 @@ const randomAlphanumIndex = () => {
     }
   }
   return alphaNumeric[index];
+};
+
+const randomString = () => {
+  //Generate a unique shortURL - returns string of 6 random alphanum char
+  let randomString = '';
+  //length of alphanum is 62, therefore, number for index must be between 0 and 61
+  while (randomString.length < 6) {
+    randomString += randomAlphanumIndex();
+  }
+  return randomString;
 };
 
 const checkIfAvail = (newVal, database) => {
@@ -50,6 +50,7 @@ const fetchUserInfo = (email, database) => {
       return database[key];
     }
   }
+  return undefined;
 };
 
 const currentUser = (cookie, database) => {

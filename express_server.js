@@ -147,7 +147,6 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 });
 
-
 //Redirect user to longURL
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
