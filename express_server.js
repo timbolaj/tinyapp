@@ -95,6 +95,15 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//Adds new url to page with all urls
+app.post("/urls", (req, res) => {
+  const shortURL = randomString();
+  const newURL = req.body.longURL;
+  const user = currentUser(req.cookies['user_id'], userDatabase);
+  urlDatabase[shortURL] = { longURL: newURL, userID: user };
+  res.redirect(`/urls/${shortURL}`);
+});
+
 //Creates new url key
 app.get("/urls/new", (req, res) => {
   const current_user = currentUser(req.cookies['user_id'], userDatabase);
@@ -126,14 +135,6 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 });
 
-//Adds new url to page with all urls
-app.post("/urls", (req, res) => {
-  const shortURL = randomString();
-  const newURL = req.body.longURL;
-  const user = currentUser(req.cookies['user_id'], userDatabase);
-  urlDatabase[shortURL] = { longURL: newURL, userID: user };
-  res.redirect(`/urls/${shortURL}`);
-});
 
 //Redirect user to longURL
 app.get("/u/:shortURL", (req, res) => {
@@ -161,15 +162,19 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Edit url in database:
 app.post("/urls/:shortURL/edit", (req, res) => {
-  const current_user = currentUser(req.cookies['user_id'], userDatabase);
-  const shortURL = req.params.shortURL;
-  if (current_user !== urlDatabase[shortURL].userID) {
-    res.send('This id does not belong to you');
+  if (!checkOwner(currentUser(req.cookies['user_id'], userDatabase), req.params.shortURL, urlDatabase)) {
+    res.send('This id does not belong to you')
   }
 
-  urlDatabase[shortURL].longURL = req.body.longURL;
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect('/urls');
 });
+
+//helper function to determine if id of user matches that of the link
+const checkOwner = (userId, urlID, database) => {
+  console.log('this is shortURL', urlID)
+  return userId === database[urlID].userID
+}
 
 //Give endpoint to handle a post to /logout
 app.post("/logout", (req, res) => {
