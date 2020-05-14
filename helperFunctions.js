@@ -29,34 +29,34 @@ const randomAlphanumIndex = () => {
 };
 
 const checkIfAvail = (newVal, database) => {
-  for (user in database) {
+  for (let user in database) {
     if (database[user]['email-address'] === newVal) {
       return false;
     }
   }
   return true;
-}
+};
 
 const addUser = (newUser, database) => {
   const newUserId = randomString();
   newUser.id = newUserId;
   database[newUserId] = newUser;
   return newUser;
-}
+};
 
 const fetchUserInfo = (email, database) => {
-  for (key in database) {
+  for (let key in database) {
     if (database[key]['email-address'] === email) {
-      return database[key]
+      return database[key];
     }
   }
-}
+};
 
 const currentUser = (cookie, database) => {
   for (let ids in database) {
     if (cookie === ids) {
       return database[ids]['email-address'];
-    } 
+    }
   }
 };
 
@@ -67,14 +67,14 @@ const urlsForUser = (id, database) => {
   //For current user, we can use the cookies
   //Parse out the variables from the cookie method
   //Go into the urlDatabase to get the urls
-  let currentUserId = req.cookies['user_id'];
-  let usersURLs = [];
-  for (key in database) {
+  let currentUserId = id;
+  let usersURLs = {};
+  for (let key in database) {
     if (database[key].userID === currentUserId) {
-      usersURLs.push(database[key]);
+      usersURLs[key] = database[key];
     }
   }
   return usersURLs;
-}
+};
 
-module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser}
+module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser};
