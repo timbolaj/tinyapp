@@ -52,4 +52,29 @@ const fetchUserInfo = (email, database) => {
   }
 }
 
-module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo}
+const currentUser = (cookie, database) => {
+  for (let ids in database) {
+    if (cookie === ids) {
+      return database[ids]['email-address'];
+    } 
+  }
+};
+
+//Helper function to return url where the userID is equal to the id of currently logged-in user
+const urlsForUser = (id, database) => {
+  //want to return the urls of the userID
+  //remember that in the urlDatabase, there is a user id associated with each url
+  //For current user, we can use the cookies
+  //Parse out the variables from the cookie method
+  //Go into the urlDatabase to get the urls
+  let currentUserId = req.cookies['user_id'];
+  let usersURLs = [];
+  for (key in database) {
+    if (database[key].userID === currentUserId) {
+      usersURLs.push(database[key]);
+    }
+  }
+  return usersURLs;
+}
+
+module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser}

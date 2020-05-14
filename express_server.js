@@ -9,7 +9,7 @@ app.use(morgan('dev'));
 app.set("view engine", "ejs");
 app.use(cookie());
 
-const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo} = require('./helperFunctions');
+const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser} = require('./helperFunctions');
 
 const urlDatabase = {
   "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "bob123"},
@@ -19,14 +19,6 @@ const urlDatabase = {
 const userDatabase = {
   "bob123": {id: "bob123", "email-address": "bob123", password: "bob123"},
 }
-
-const currentUser = cookie => {
-  for (let ids in userDatabase) {
-    if (cookie === ids) {
-      return userDatabase[ids]['email-address'];
-    } 
-  }
-};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -41,15 +33,21 @@ app.get("/hello", (req, res) => {
 });
 
 //Displays main page with all urls
+//First thing, ensure that those who aren't signed in can't see this and prompted to sign in or register first
+//page needs to also filter out the pages not associated with those of the current user
 app.get("/urls", (req, res) => {
-  console.log(urlDatabase);
-  let templateVars = { urls: urlDatabase, current_user: currentUser(req.cookies['user_id']) };
+  const current_user = currentUser(req.cookies['user_id'], userDatabase);
+  if (!current_user) {
+    console.log(current_user)
+    res.send("<html><body>Please sign in or register</body></html");
+  }
+  let templateVars = { urls: urlDatabase, current_user: currentUser(req.cookies['user_id'], userDatabase) };
   res.render("urls_index", templateVars);
 });
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  const current_user = currentUser(req.cookies['user_id'])
+  const current_user = currentUser(req.cookies['user_id'], userDatabase)
   if (!current_user) {
     res.redirect('/login');
   }
@@ -63,7 +61,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (verifyShortUrl(shortURL, urlDatabase)) {
     let longURL = urlDatabase[req.params.shortURL].longURL;
-    let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.cookies['user_id'])};
+    let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.cookies['user_id'], userDatabase)};
     res.render("urls_show", templateVars);
   } else {
     res.send('does not exist');
@@ -74,9 +72,8 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = randomString();
   const newURL = req.body.longURL;
-  const user = currentUser(req.cookies['user_id']);
+  const user = currentUser(req.cookies['user_id'], userDatabase);
   urlDatabase[shortURL] = { longURL: newURL, userID: user };
-  console.log(urlDatabase)
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -108,7 +105,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  templateVars = { current_user: currentUser(req.cookies['user_id'])}
+  templateVars = { current_user: currentUser(req.cookies['user_id'], userDatabase)}
   res.render("urls_register", templateVars)
 })
 
@@ -130,7 +127,7 @@ app.post("/register", (req, res) => {
 })
 
 app.get("/login", (req, res) => {
-  templateVars = { current_user: currentUser(req.cookies['user_id'])}
+  templateVars = { current_user: currentUser(req.cookies['user_id'], userDatabase)}
   res.render("login", templateVars);
 })
 
