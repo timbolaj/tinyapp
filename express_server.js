@@ -48,7 +48,12 @@ app.get("/urls", (req, res) => {
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  let templateVars = { current_user: currentUser(req.cookies['user_id'])}
+  const current_user = currentUser(req.cookies['user_id'])
+  if (!current_user) {
+    res.redirect('/login');
+  }
+
+  let templateVars = { current_user: current_user }
   res.render("urls_new", templateVars);
 });
 
