@@ -30,11 +30,10 @@ const randomAlphanumIndex = () => {
 
 const checkIfAvail = (newVal, database) => {
   for (user in database) {
-    for (information in database[user]);
-      if (database[user][information] === newVal) {
-        return false;
-      }
+    if (database[user]['email-address'] === newVal) {
+      return false;
     }
+  }
   return true;
 }
 

@@ -17,8 +17,7 @@ const urlDatabase = {
 };
 
 const userDatabase = {
-  //Want to store user as key then object
-  'bob123': {id: 'bob123', 'email-address': 'bob', 'password': 'bob'}
+
 }
 
 const currentUser = cookie => {
@@ -119,6 +118,7 @@ app.post("/register", (req, res) => {
     res.cookie('user_id', newUser.id)
     res.redirect('/urls');
   }
+  console.log(userDatabase)
 })
 
 app.get("/login", (req, res) => {
@@ -152,7 +152,6 @@ app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
   res.redirect('/urls');
 });
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
