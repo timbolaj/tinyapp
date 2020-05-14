@@ -9,7 +9,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 app.set("view engine", "ejs");
 app.use(cookieSession({
-  name: 'session', //it will be req.session.user_id
+  name: 'session', 
   keys: ['user_id']
 }))
 
@@ -119,12 +119,12 @@ app.post("/urls", (req, res) => {
   const user = currentUser(req.session.user_id, userDatabase);
   if (!user) {
     res.redirect("/login");
+  } else {
+    const shortURL = randomString();
+    const newURL = req.body.longURL;
+    urlDatabase[shortURL] = { longURL: newURL, userID: user };
+    res.redirect(`/urls/${shortURL}`);
   }
-
-  const shortURL = randomString();
-  const newURL = req.body.longURL;
-  urlDatabase[shortURL] = { longURL: newURL, userID: user };
-  res.redirect(`/urls/${shortURL}`);
 });
 
 //Creates new url key
@@ -171,20 +171,20 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!checkOwner(currentUser(req.session.user_id, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you')
+  } else {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
   }
-
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
 });
 
 //Edit url in database:
 app.post("/urls/:shortURL/edit", (req, res) => {
   if (!checkOwner(currentUser(req.session.user_id, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you')
+  } else {
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    res.redirect('/urls');
   }
-
-  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-  res.redirect('/urls');
 });
 
 //Give endpoint to handle a post to /logout
