@@ -30,18 +30,27 @@ const randomAlphanumIndex = () => {
 
 const checkIfAvail = (newVal, database) => {
   for (user in database) {
-    if (!user[newVal]) {
-      return null;
+    for (information in database[user]);
+      if (database[user][information] === newVal) {
+        return false;
+      }
     }
-  }
   return true;
 }
 
 const addUser = (newUser, database) => {
   const newUserId = randomString();
-  newUser.id = newUserId
+  newUser.id = newUserId;
   database[newUserId] = newUser;
-  return newUser
+  return newUser;
 }
 
-module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser}
+const fetchUserInfo = (email, database) => {
+  for (key in database) {
+    if (database[key]['email-address'] === email) {
+      return database[key]
+    }
+  }
+}
+
+module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo}

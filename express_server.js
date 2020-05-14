@@ -9,7 +9,7 @@ app.use(morgan('dev'));
 app.set("view engine", "ejs");
 app.use(cookie());
 
-const {verifyShortUrl, randomString, checkIfAvail, addUser} = require('./helperFunctions');
+const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo} = require('./helperFunctions');
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -18,7 +18,16 @@ const urlDatabase = {
 
 const userDatabase = {
   //Want to store user as key then object
+  'bob123': {id: 'bob123', 'email-address': 'bob', 'password': 'bob'}
 }
+
+const currentUser = cookie => {
+  for (let ids in userDatabase) {
+    if (cookie === ids) {
+      return userDatabase[ids]['email-address'];
+    } 
+  }
+};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -34,13 +43,13 @@ app.get("/hello", (req, res) => {
 
 //Displays main page with all urls
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, user_id: req.cookies['user_id'] };
+  let templateVars = { urls: urlDatabase, current_user: currentUser(req.cookies['user_id']) };
   res.render("urls_index", templateVars);
 });
 
 //Creates new url key
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user_id: req.cookies['user_id']}
+  let templateVars = { current_user: currentUser(req.cookies['user_id'])}
   res.render("urls_new", templateVars);
 });
 
@@ -49,7 +58,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (verifyShortUrl(shortURL, urlDatabase)) {
     let longURL = urlDatabase[req.params.shortURL];
-    let templateVars = { shortURL: shortURL, longURL: longURL, user_id: req.cookies['user_id']};
+    let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.cookies['user_id'])};
     res.render("urls_show", templateVars);
   } else {
     res.send('does not exist');
@@ -92,38 +101,50 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  templateVars = { user_id :req.cookies['user_id'] }
+  templateVars = { current_user: currentUser(req.cookies['user_id'])}
   res.render("urls_register", templateVars)
 })
 
 app.post("/register", (req, res) => {
-  const {email, password} = req.body;
+  const {password} = req.body;
+  const email = req.body['email-address']
   if (email === '') {
-    res.status(400).send('Error: Please enter in an email');
+    res.status(400).send('Error: Please enter an email');
   } else if (password === '') {
     res.status(400).send('Error: Please enter a password');
   } else if (!checkIfAvail(email, userDatabase)) {
     res.status(400).send('Error: Please be original, email already taken');
+  } else {
+    newUser = addUser(req.body, userDatabase)
+    res.cookie('user_id', newUser.id)
+    res.redirect('/urls');
   }
-  newUser = addUser(req.body, userDatabase)
-  res.cookie('user_id', newUser.id)
-  res.redirect('/urls');
 })
 
 app.get("/login", (req, res) => {
-  templateVars = { user_id :req.cookies['user_id'] }
+  templateVars = { current_user: currentUser(req.cookies['user_id'])}
   res.render("login", templateVars);
 })
 
 //Working on cookies here
 //Give endpoint to hanlde a post to /login
 app.post("/login", (req, res) => {
-  //address edge cases, make sure there's a string
-  if (userDatabase[req.body.user_id]) {
-    const user_id = req.body.user_id;
-    res.cookie('user_id', user_id);
+  //Will do a for loop, test first if email addresses match
+  const emailUsed = req.body['email-address'];
+  const pwdUsed = req.body['password'];
+
+  if (fetchUserInfo(emailUsed, userDatabase)) { //user email matches
+    const password = fetchUserInfo(emailUsed, userDatabase).password;
+    const id = fetchUserInfo(emailUsed, userDatabase).id
+    if (password !== pwdUsed) {
+      res.status(403).send('Error 403: Please retype password');
+    } else {
+      res.cookie('user_id', id);
+      res.redirect('/urls');
+    }
+  } else {
+    res.status(403).send('Error 403: E-mail not found')
   }
-  res.status(400).send('Either your user id or password was incorrect: please try again');
 });
 
 //Give endpoint to handle a post to /logout
