@@ -21,7 +21,7 @@ const urlDatabase = {
 };
 
 const userDatabase = {
-  "bob123": {id: "bob123", "email-address": "bob123", password: "bob123"},
+  "bob123": {id: "bob123", "email": "bob123", password: "bob123"},
 };
 
 app.get("/", (req, res) => {
@@ -42,15 +42,18 @@ app.get("/hello", (req, res) => {
 
 //Creates new page: registration
 app.get("/register", (req, res) => {
-  let templateVars = { current_user: currentUser(req.session.user_id, userDatabase)};
+  const user = currentUser(req.session.user_id, userDatabase)
+  if (user) {
+    res.redirect('/urls');
+  }
+
+  let templateVars = { current_user: user };
   res.render("urls_register", templateVars);
 });
 
 app.post("/register", (req, res) => {
-  const {password} = req.body;
-  const hashedPwd = bcrypt.hashSync(password, 10)
+  const {email, password} = req.body;
 
-  const email = req.body['email-address'];
   if (email === '') {
     res.status(400).send('Error: Please enter an email');
   } else if (password === '') {
@@ -58,7 +61,6 @@ app.post("/register", (req, res) => {
   } else if (!checkIfAvail(email, userDatabase)) {
     res.status(400).send('Error: Please be original, email already taken');
   } else {
-    req.body['password'] = hashedPwd;
     const newUser = addUser(req.body, userDatabase);
     req.session.user_id = newUser.id;
     res.redirect('/urls');
@@ -66,7 +68,12 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  let templateVars = { current_user: currentUser(req.session.user_id, userDatabase)};
+  const user = currentUser(req.session.user_id, userDatabase);
+  if (user) {
+    res.redirect("/urls");
+  }
+
+  let templateVars = { current_user: user };
   res.render("login", templateVars);
 });
 
@@ -75,12 +82,11 @@ app.get("/login", (req, res) => {
 //Create helper function to verify that the email and pwd match database
 app.post("/login", (req, res) => {
   //Will do a for loop, test first if email addresses match
-  const emailUsed = req.body['email-address'];
+  const emailUsed = req.body['email'];
   const pwdUsed = req.body['password'];
 
   if (fetchUserInfo(emailUsed, userDatabase)) { //user email matches
-    const password = fetchUserInfo(emailUsed, userDatabase).password;
-    const id = fetchUserInfo(emailUsed, userDatabase).id;
+    const { password, id } = fetchUserInfo(emailUsed, userDatabase); 
     if (!bcrypt.compareSync(pwdUsed, password)) {
       res.status(403).send('Error 403: Please retype password');
     } else {
@@ -98,7 +104,8 @@ app.post("/login", (req, res) => {
 app.get("/urls", (req, res) => {
   const current_user = currentUser(req.session.user_id, userDatabase);
   if (!current_user) {
-    res.send("<html><body>Please sign in or register</body></html");
+    res.send("Please sign in or register"); 
+    //port to a view template
   }
   //use helper function to find the links that belong to the user
   const usersLinks = urlsForUser(current_user, urlDatabase);
@@ -128,18 +135,16 @@ app.get("/urls/new", (req, res) => {
 });
 
 //Shows webpage for the newly added website
-//Dont want different users to see this
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const current_user = currentUser(req.session.user_id, userDatabase);
-  if (!urlDatabase[shortURL]) {
-    res.send("The link does not exist");
-  } else if (current_user !== urlDatabase[shortURL].userID) {
+
+  if (current_user !== urlDatabase[shortURL].userID) {
     res.send('This id does not belong to you');
   }
 
   if (verifyShortUrl(shortURL, urlDatabase)) {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
+    const longURL = urlDatabase[shortURL].longURL;
     let templateVars = { shortURL: shortURL, longURL: longURL, current_user: currentUser(req.session.user_id, userDatabase)};
     res.render("urls_show", templateVars);
   } else {

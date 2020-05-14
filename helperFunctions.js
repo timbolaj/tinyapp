@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 //helper function, check if short url exists
 const verifyShortUrl = (URL, database) => {
   return database[URL];
@@ -30,7 +32,7 @@ const randomString = () => {
 
 const checkIfAvail = (newVal, database) => {
   for (let user in database) {
-    if (database[user]['email-address'] === newVal) {
+    if (database[user].email === newVal) { 
       return false;
     }
   }
@@ -40,13 +42,14 @@ const checkIfAvail = (newVal, database) => {
 const addUser = (newUser, database) => {
   const newUserId = randomString();
   newUser.id = newUserId;
-  database[newUserId] = newUser;
+  newUser.password = bcrypt.hashSync(newUser.password, 10)
+  database[newUserId] = newUser; 
   return newUser;
 };
 
 const fetchUserInfo = (email, database) => {
   for (let key in database) {
-    if (database[key]['email-address'] === email) {
+    if (database[key].email === email) {
       return database[key];
     }
   }
@@ -56,18 +59,13 @@ const fetchUserInfo = (email, database) => {
 const currentUser = (cookie, database) => {
   for (let ids in database) {
     if (cookie === ids) {
-      return database[ids]['email-address'];
+      return database[ids].email;  //request.locals
     }
   }
 };
 
 //Helper function to return url where the userID is equal to the id of currently logged-in user
 const urlsForUser = (id, database) => {
-  //want to return the urls of the userID
-  //remember that in the urlDatabase, there is a user id associated with each url
-  //For current user, we can use the cookies
-  //Parse out the variables from the cookie method
-  //Go into the urlDatabase to get the urls
   let currentUserId = id;
   let usersURLs = {};
   for (let key in database) {
