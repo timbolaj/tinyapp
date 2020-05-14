@@ -77,4 +77,9 @@ const urlsForUser = (id, database) => {
   return usersURLs;
 };
 
-module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser};
+//helper function to determine if id of user matches that of the link
+const checkOwner = (userId, urlID, database) => {
+  return userId === database[urlID].userID
+}
+
+module.exports = {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser, checkOwner};

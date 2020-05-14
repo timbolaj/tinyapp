@@ -4,12 +4,13 @@ const app = express();
 const PORT = 8080;
 const morgan = require('morgan');
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 app.set("view engine", "ejs");
 app.use(cookie());
 
-const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser} = require('./helperFunctions');
+const {verifyShortUrl, randomString, checkIfAvail, addUser, fetchUserInfo, currentUser, urlsForUser, checkOwner} = require('./helperFunctions');
 
 const urlDatabase = {
   "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "bob123"},
@@ -21,7 +22,11 @@ const userDatabase = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const current_user = currentUser(req.cookies['user_id'], userDatabase);
+  if (!current_user) {
+    res.redirect("/login");
+  }
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -40,6 +45,8 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const {password} = req.body;
+  const hashedPwd = bcrypt.hashSync(password, 10)
+
   const email = req.body['email-address'];
   if (email === '') {
     res.status(400).send('Error: Please enter an email');
@@ -48,6 +55,7 @@ app.post("/register", (req, res) => {
   } else if (!checkIfAvail(email, userDatabase)) {
     res.status(400).send('Error: Please be original, email already taken');
   } else {
+    req.body['password'] = hashedPwd;
     const newUser = addUser(req.body, userDatabase);
     res.cookie('user_id', newUser.id);
     res.redirect('/urls');
@@ -61,6 +69,7 @@ app.get("/login", (req, res) => {
 
 //Working on cookies here
 //Give endpoint to hanlde a post to /login
+//Create helper function to verify that the email and pwd match database
 app.post("/login", (req, res) => {
   //Will do a for loop, test first if email addresses match
   const emailUsed = req.body['email-address'];
@@ -69,7 +78,7 @@ app.post("/login", (req, res) => {
   if (fetchUserInfo(emailUsed, userDatabase)) { //user email matches
     const password = fetchUserInfo(emailUsed, userDatabase).password;
     const id = fetchUserInfo(emailUsed, userDatabase).id;
-    if (password !== pwdUsed) {
+    if (!bcrypt.compareSync(pwdUsed, password)) {
       res.status(403).send('Error 403: Please retype password');
     } else {
       res.cookie('user_id', id);
@@ -143,20 +152,17 @@ app.get("/u/:shortURL", (req, res) => {
     const longURL = urlDatabase[shortURL].longURL;
     res.redirect(longURL);
   } else {
-    res.status(404);
-    res.send('Does not exist');
+    res.status(404).send('Does not exist');
   }
 });
 
 //Delete url:
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const current_user = currentUser(req.cookies['user_id'], userDatabase);
-  const shortURL = req.params.shortURL;
-  if (current_user !== urlDatabase[shortURL].userID) {
-    res.send('This id does not belong to you');
+  if (!checkOwner(currentUser(req.cookies['user_id'], userDatabase), req.params.shortURL, urlDatabase)) {
+    res.send('This id does not belong to you')
   }
 
-  delete urlDatabase[shortURL];
+  delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
 
@@ -169,12 +175,6 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect('/urls');
 });
-
-//helper function to determine if id of user matches that of the link
-const checkOwner = (userId, urlID, database) => {
-  console.log('this is shortURL', urlID)
-  return userId === database[urlID].userID
-}
 
 //Give endpoint to handle a post to /logout
 app.post("/logout", (req, res) => {
