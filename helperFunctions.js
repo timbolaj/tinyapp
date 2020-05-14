@@ -5,6 +5,7 @@ const verifyShortUrl = (URL, database) => {
   return database[URL];
 };
 
+//Generate random alphaNumeric character
 const randomAlphanumIndex = () => {
   const alphaLowerCase = 'abcdefghijklmnopqrstuvwxyz';
   const upperCase = alphaLowerCase.toUpperCase();
@@ -20,16 +21,16 @@ const randomAlphanumIndex = () => {
   return alphaNumeric[index];
 };
 
+//Generate random alphaNumeric string with length of 6
 const randomString = () => {
-  //Generate a unique shortURL - returns string of 6 random alphanum char
   let randomString = '';
-  //length of alphanum is 62, therefore, number for index must be between 0 and 61
   while (randomString.length < 6) {
     randomString += randomAlphanumIndex();
   }
   return randomString;
 };
 
+//helper function to check if a username is already taken (false) or not (true)
 const checkIfAvail = (newVal, database) => {
   for (let user in database) {
     if (database[user].email === newVal) {
@@ -39,6 +40,7 @@ const checkIfAvail = (newVal, database) => {
   return true;
 };
 
+//helper function to add a new user to the database
 const addUser = (newUser, database) => {
   const newUserId = randomString();
   newUser.id = newUserId;
@@ -47,6 +49,7 @@ const addUser = (newUser, database) => {
   return newUser;
 };
 
+//helper function to grab the info of a user using their e-mail address
 const fetchUserInfo = (email, database) => {
   for (let key in database) {
     if (database[key].email === email) {
@@ -56,6 +59,7 @@ const fetchUserInfo = (email, database) => {
   return undefined;
 };
 
+//helper function that returns the email of the person currently logged in
 const currentUser = (cookie, database) => {
   for (let ids in database) {
     if (cookie === ids) {
