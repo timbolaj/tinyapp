@@ -162,7 +162,6 @@ app.delete("/urls/:shortURL", (req, res) => {
   }
 });
 
-//should be a PUT
 app.put("/urls/:shortURL", (req, res) => {
   if (!checkOwner(currentUser(req.session.userId, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you');
