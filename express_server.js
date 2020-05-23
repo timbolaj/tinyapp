@@ -1,11 +1,14 @@
 const express = require("express");
 const methodOverride = require("method-override");
 const cookieSession = require('cookie-session');
-const app = express();
+
+
 const PORT = 8080;
 const morgan = require('morgan');
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
+const app = express();
+app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 app.set("view engine", "ejs");
@@ -150,7 +153,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL", (req, res) => {
   if (!checkOwner(currentUser(req.session.userId, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you');
   } else {
@@ -159,7 +162,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL/edit", (req, res) => {
+//should be a PUT
+app.put("/urls/:shortURL", (req, res) => {
   if (!checkOwner(currentUser(req.session.userId, userDatabase), req.params.shortURL, urlDatabase)) {
     res.send('This id does not belong to you');
   } else {
